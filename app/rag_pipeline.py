@@ -3,7 +3,7 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 import ollama
 import json
-import os
+import os  # Import the os module
 from typing import List, Dict, Any
 
 # Define constants for file paths
@@ -27,6 +27,8 @@ class RAGPipeline:
         self.llm_model_name = llm_model_name
         self.faiss_index = None
         self.metadata = None
+        # Get Ollama host from environment variable, default to localhost
+        self.ollama_host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
         self._load_vector_store()  # Load the pre-built vector store on initialization
 
     def _load_vector_store(self):
@@ -117,11 +119,11 @@ class RAGPipeline:
         """
 
         try:
-            # Call the Ollama LLM API
-            # Ensure Ollama server is running and the model is pulled (e.g., `ollama run llama2`)
+            # Call the Ollama LLM API, using the configured host
             response = ollama.chat(
                 model=self.llm_model_name,
                 messages=[{"role": "user", "content": prompt}],
+                host=self.ollama_host,  # Use the configured host
             )
             generated_answer = response["message"]["content"].strip()
 
@@ -134,7 +136,7 @@ class RAGPipeline:
         except ollama.ResponseError as e:
             print(f"Error communicating with Ollama: {e}")
             return {
-                "answer": f"An error occurred while generating the answer (Ollama connection issue: {e}). Please ensure Ollama server is running and the '{self.llm_model_name}' model is available.",
+                "answer": f"An error occurred while generating the answer (Ollama connection issue: {e}). Please ensure Ollama server is running and the '{self.llm_model_name}' model is available at {self.ollama_host}.",
                 "citations": [],
             }
         except Exception as e:
